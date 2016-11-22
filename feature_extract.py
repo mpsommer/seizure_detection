@@ -1,16 +1,10 @@
-
-import pandas as pd
 import numpy as np
-from math import *
+import itertools
 from scipy.io import loadmat
 from scipy.stats import skew, kurtosis
 import os
-from scipy.signal import butter, filtfilt
-from os.path import splitext
 import matplotlib.pyplot as plt
-from numpy.lib import stride_tricks
 from obspy.signal import filter
-import itertools
 from scipy import signal
 
 def windows(x, nperseg, noverlap):
@@ -44,22 +38,11 @@ def windows(x, nperseg, noverlap):
                                                  strides=strides)
     return result
 
-
 def mat_to_data(path):
     mat = loadmat(path)
     names = mat['dataStruct'].dtype.names
     ndata = {n: mat['dataStruct'][n][0, 0] for n in names}
     return ndata
-
-def corr(data,type_corr):
-    C = np.array(data.corr(type_corr))
-    C[np.isnan(C)] = 0
-    C[np.isinf(C)] = 0
-    w,v = np.linalg.eig(C)
-    #print(w)
-    x = np.sort(w)
-    x = np.real(x)
-    return x
 
 def calculate_features(file_name):
     f = mat_to_data(file_name)
@@ -84,65 +67,153 @@ def calculate_features(file_name):
         data_squared = np.power(data,2)
         energy_all = np.trapz(data_squared,time)
         var_all = np.var(data)
-        f_all, Pxx_all = signal.periodogram(data, fs, detrend='constant', return_onesided=True)
 
         features.append(energy_all)
         features.append(var_all)
-        features.append(Pxx_all)
 
         # measure psd over time
         data_windowed = windows(eeg_All, length, overlap)
         time_windowed = windows(time, length, overlap)
         time_center = np.median(time_windowed,axis=-1)
 
-        f_win, Pxx_win = signal.periodogram(data_windowed, fs, detrend='constant', return_onesided=True,axis=-1)
+        # measure energy
+        data_windowed_squared = np.power(data_windowed,2)
+        energy_win = np.trapz(data_windowed_squared,axis=-1)
 
-        # trends in psd over time
+        # energy trend
+        m_energy,b_energy = np.polyfit(time_center, energy_win, 1)
+        features.append(m_energy)
+
+        f_win, Pxx_win = signal.periodogram(data_windowed, fs, detrend='constant', return_onesided=True,axis=-1)
+        f_win = f_win[0:3000]
+        Pxx_win = Pxx_win[:,0:3000]
+        Pxx_win_win = windows(Pxx_win, 80, 20)
+        Pxx_win_win = np.median(Pxx_win_win,axis=-1)
+        f_win_win = windows(f_win, 80, 20)
+        f_win_win = np.median(f_win_win,axis=-1)
+
+        sk = skew(data_windowed,axis=-1)
+        ku = kurtosis(data_windowed,axis=-1)
+        var = np.var(data_windowed,axis=-1)
+
+        # trends in psd over time by frequency
         psd_trend1 = []
         psd_trend2 = []
-        for i in range(0,len(f_win)):
-            m_Pxx,b_Pxx = np.polyfit(time_center, Pxx_win[:,i], 1)
-            Pxx_var = np.var(Pxx_win[:,i])
+
+        for i in range(0,len(f_win_win)):
+            m_Pxx,b_Pxx = np.polyfit(time_center, Pxx_win_win[:,i], 1)
+            Pxx_var = np.var(Pxx_win_win[:,i])
             psd_trend1.append(m_Pxx)
             psd_trend2.append(Pxx_var)
-        features.append(psd_trend1)
-        features.append(psd_trend2)
+        features.extend(psd_trend1)
+        features.extend(psd_trend2)
+
+        # time domain statistical trends over time
+        m_sk,b_sk = np.polyfit(time_center, sk, 1)
+        m_var,b_var = np.polyfit(time_center, var, 1)
+        m_ku,b_ku = np.polyfit(time_center, ku, 1)
+        features.append(m_sk)
+        features.append(m_var)
+        features.append(m_ku)
 
         # subset data by EEG frequency: do any particular type of brain-wave correlate with pre-seizures?
-        eeg_Delta = filter.lowpass(data,4, fs, corners=2,zerophase=True)
-        eeg_Theta = filter.bandpass(data, 4, 7, fs, corners=2,zerophase=True)
-        eeg_Alpha= filter.bandpass(data, 7, 14, fs, corners=2,zerophase=True)
-        eeg_Beta = filter.bandpass(data, 15, 30, fs, corners=2,zerophase=True)
-        eeg_Gamma = filter.bandpass(data, 30, 100, fs, corners=2,zerophase=True)
-        eeg_Mu = filter.bandpass(data, 8, 13, fs, corners=2,zerophase=True)
-        eeg_High = filter.bandpass(data, 100, 200, fs, corners=2,zerophase=True)
-
-        data_all_freqs = [eeg_Delta,eeg_Theta,eeg_Alpha,eeg_Beta,eeg_Gamma,eeg_Mu,eeg_High]
-
-        for j in range(0,len(data_all_freqs)):
-            data = data_all_freqs[j]
-            data_squared = np.power(data,2)
-
-            energy = np.trapz(data_squared,time)
-            var = np.var(data)
-            data_windowed = windows(data, length, overlap)
-
-            # measure variance
-            var = np.var(data_windowed,axis=-1)
-            # variance trend
-            m_var,b_var = np.polyfit(time_center, var, 1)
-
-            # measure energy
-            data_windowed_squared = np.power(data_windowed,2)
-            energy_win = np.trapz(data_windowed_squared,axis=-1)
-
-            # energy trend
-            m_energy,b_energy = np.polyfit(time_center, energy_win, 1)
-
-
+        # eeg_Delta = filter.lowpass(data,4, fs, corners=2,zerophase=True)
+        # eeg_Theta = filter.bandpass(data, 4, 7, fs, corners=2,zerophase=True)
+        # eeg_Alpha= filter.bandpass(data, 7, 14, fs, corners=2,zerophase=True)
+        # eeg_Beta = filter.bandpass(data, 15, 30, fs, corners=2,zerophase=True)
+        # eeg_Gamma = filter.bandpass(data, 30, 100, fs, corners=2,zerophase=True)
+        # eeg_Mu = filter.bandpass(data, 8, 13, fs, corners=2,zerophase=True)
+        # eeg_High = filter.bandpass(data, 100, 200, fs, corners=2,zerophase=True)
+        #
+        # data_all_freqs = [eeg_Delta,eeg_Theta,eeg_Alpha,eeg_Beta,eeg_Gamma,eeg_Mu,eeg_High]
+        #
+        # for j in range(0,len(data_all_freqs)):
+        #     print j
+        #     data = data_all_freqs[j]
+        #     data_squared = np.power(data,2)
+        #     energy_all = np.trapz(data_squared,time)
+        #     var_all = np.var(data)
+        #
+        #     features.append(energy_all)
+        #     features.append(var_all)
+        #
+        #     # measure psd over time
+        #     data_windowed = windows(eeg_All, length, overlap)
+        #     time_windowed = windows(time, length, overlap)
+        #     time_center = np.median(time_windowed,axis=-1)
+        #
+        #     # measure energy
+        #     data_windowed_squared = np.power(data_windowed,2)
+        #     energy_win = np.trapz(data_windowed_squared,axis=-1)
+        #
+        #     # energy trend
+        #     m_energy,b_energy = np.polyfit(time_center, energy_win, 1)
+        #     features.append(m_energy)
+        #
+        #     f_win, Pxx_win = signal.periodogram(data_windowed, fs, detrend='constant', return_onesided=True,axis=-1)
+        #     sk = skew(data_windowed,axis=-1)
+        #     ku = kurtosis(data_windowed,axis=-1)
+        #     var = np.var(data_windowed,axis=-1)
+        #
+        #     # trends in psd over time by frequency
+        #     psd_trend1 = []
+        #     psd_trend2 = []
+        #     for i in range(0,len(f_win)):
+        #         m_Pxx,b_Pxx = np.polyfit(time_center, Pxx_win[:,i], 1)
+        #         Pxx_var = np.var(Pxx_win[:,i])
+        #         psd_trend1.append(m_Pxx)
+        #         psd_trend2.append(Pxx_var)
+        #     features.append(psd_trend1)
+        #     features.append(psd_trend2)
+        #
+        #     # time domain statistical trends over time
+        #     sk_trend = []
+        #     ku_trend = []
+        #     var_trend = []
+        #     for i in range(0,len(f_win)):
+        #         m_sk,b_sk = np.polyfit(time_center, sk, 1)
+        #         m_var,b_var = np.polyfit(time_center, var, 1)
+        #         m_ku,b_ku = np.polyfit(time_center, ku, 1)
+        #         sk_trend.append(m_sk)
+        #         var_trend.append(m_var)
+        #         ku_trend.append(m_ku)
+        #     features.append(sk_trend)
+        #     features.append(var_trend)
+        #     features.append(ku_trend)
+        features_by_channel.append(features)
+    means = [np.mean(sub) for sub in zip(*features_by_channel)]
+    variances = [np.var(sub) for sub in zip(*features_by_channel)]
+    all_features = [val for sublist in features_by_channel for val in sublist]
+    all_features.extend(means)
+    all_features.extend(variances)
+    return np.asarray(all_features)
 
 path = '/Users/julieschnurr/Desktop/finalprog/data/train_1/'
-for fn in os.listdir(path):
+num_files = len(os.listdir(path))
+label_array = []
+feature_array = []
+
+for i in range(0,len(os.listdir(path))):
+        fn = os.listdir(path)[i]
+        print "file: " + str(i+1) + " out of: " + str(num_files)
         fn1 = fn.split('.')[0]
         label = fn1.split('_')[-1]
-        calculate_features(path+fn)
+        label_array.append(label)
+        try:
+            all_features = calculate_features(path+fn)
+        except ValueError:
+            print "corrupted file"
+            continue
+        feature_array.append(all_features)
+
+feature_array = np.array(feature_array)
+label_array = np.array(label_array)
+outfile1 = 'features_train_1'
+outfile2 = 'labels_train_1'
+np.savez(outfile1,labels = label_array)
+np.savez(outfile2, features = feature_array)
+
+loadfile1 = 'labels_train_1.npz'
+loadfile2 = 'features_train_1.npz'
+data = np.load(loadfile1)
+data2 = np.load(loadfile2)
