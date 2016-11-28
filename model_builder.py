@@ -14,15 +14,15 @@ import sys
  # X = numpy.ones((1, 1301))
 
 with np.load('/Users/julieschnurr/IdeaProjects/seizure_prediction/labels_train_1.npz') as data:
-    print data.keys()
+    #print data.keys()
     labels = data['labels']
 #
-print(len(labels))
+#print(len(labels))
 #
 with np.load('/Users/julieschnurr/IdeaProjects/seizure_prediction/features_train_1_mean.npz') as data:
     features = data['features']
 #
-print(len(features))
+# print(len(features))
 #
 # if len(labels[0]) != len(features[0]):
 #     print("Length of feature set and label set do not match")
@@ -41,9 +41,9 @@ X = np.array(features)
 # X = np.asarray(X)[0,:]
 n_samples = y.shape[0]
 # X.reshape(-1, 1)
-print("n_samples = ", n_samples)
-print("X Shape = ", X.shape)
-print("y.shape = ", y.shape)
+# print("n_samples = ", n_samples)
+# print("X Shape = ", X.shape)
+# print("y.shape = ", y.shape)
 #
 # print
 
@@ -61,14 +61,14 @@ X_test, y_test = X[n_samples / 2 :], y[n_samples / 2:]
 #     X_train.append(X[0][i])
 #     y_train.append(y[i])
 
-print(len(X_train))
-print("X_train shape = ", X_train.shape)
-print(len(y_train))
-print("y_train shape = ", y_train.shape)
-print(len(X_test))
-print("X_test shape = ", X_test.shape)
-print(len(y_test))
-print("y_test shape = ", y_test.shape)
+# print(len(X_train))
+# print("X_train shape = ", X_train.shape)
+# print(len(y_train))
+# print("y_train shape = ", y_train.shape)
+# print(len(X_test))
+# print("X_test shape = ", X_test.shape)
+# print(len(y_test))
+# print("y_test shape = ", y_test.shape)
 #
 # print(X_train.shape)
 # print(X_train.transpose().shape)
@@ -91,13 +91,32 @@ print("y_test shape = ", y_test.shape)
 
 ####Version 2
 alpha = 0.1
-lasso = Lasso(alpha=alpha, max_iter=10000000, tol=0.1)
+lasso = Lasso(alpha=alpha, max_iter=10000000, tol=0.01)
 y_pred_lasso = lasso.fit(X_train, y_train)
-# results = y_pred_lasso.predict(X_test)
-# r2_score_lasso = r2_score(y_test, results)
-# print(lasso)
-# print("r^2 on test data : %f" % r2_score_lasso)
+results = y_pred_lasso.predict(X_test)
+y_test = y_test.astype(float)
+results = np.round(results)
 
+percent_correct = 100.0 * np.sum(results == y_test)/np.float(len(results))
+
+plt.subplot(2,1,1)
+plt.title('results')
+plt.hist(results)
+plt.xlim([-.25,1.25])
+plt.ylim([0,700])
+
+plt.subplot(2,1,2)
+plt.hist(y_test)
+plt.title('test')
+plt.xlim([-.25,1.25])
+plt.ylim([0,700])
+plt.show()
+
+print("% correctly classified :" + str(percent_correct))
+
+r2_score_lasso = r2_score(y_test, results)
+
+print("r^2 on test data : %f" % r2_score_lasso)
 ####   Version 1
 # alpha = 0.1
 # lasso = Lasso(alpha=alpha)
