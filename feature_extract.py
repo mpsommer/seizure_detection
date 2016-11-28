@@ -4,7 +4,7 @@ from scipy.io import loadmat
 from scipy.stats import skew, kurtosis
 import os
 import matplotlib.pyplot as plt
-from obspy.signal import filter
+# from obspy.signal import filter
 from scipy import signal
 
 def windows(x, nperseg, noverlap):
@@ -128,7 +128,7 @@ def calculate_features(file_name):
         # data_all_freqs = [eeg_Delta,eeg_Theta,eeg_Alpha,eeg_Beta,eeg_Gamma,eeg_Mu,eeg_High]
         #
         # for j in range(0,len(data_all_freqs)):
-        #     print j
+        #     print (j)
         #     data = data_all_freqs[j]
         #     data_squared = np.power(data,2)
         #     energy_all = np.trapz(data_squared,time)
@@ -188,32 +188,35 @@ def calculate_features(file_name):
     all_features.extend(variances)
     return np.asarray(all_features)
 
-path = '/Users/julieschnurr/Desktop/finalprog/data/train_1/'
+# path = '/Users/julieschnurr/Desktop/finalprog/data/train_1/'
+path = '/Users/michaelsommer/Documents/classes/ics635/finalProject/train_1/'
 num_files = len(os.listdir(path))
 label_array = []
 feature_array = []
 
 for i in range(0,len(os.listdir(path))):
         fn = os.listdir(path)[i]
-        print "file: " + str(i+1) + " out of: " + str(num_files)
-        fn1 = fn.split('.')[0]
-        label = fn1.split('_')[-1]
-        label_array.append(label)
-        try:
-            all_features = calculate_features(path+fn)
-        except ValueError:
-            print "corrupted file"
-            continue
-        feature_array.append(all_features)
+        print("Current file = ", fn)
+        if not fn.startswith('.'):
+            print("file: " + str(i+1) + " out of: " + str(num_files))
+            fn1 = fn.split('.')[0]
+            label = fn1.split('_')[-1]
+            try:
+                all_features = calculate_features(path+fn)
+            except ValueError:
+                print("corrupted file")
+                continue
+            feature_array.append(all_features)
+            label_array.append(label)
 
 feature_array = np.array(feature_array)
 label_array = np.array(label_array)
-outfile1 = 'features_train_1'
-outfile2 = 'labels_train_1'
+outfile1 = 'labels_train_1'
+outfile2 = 'features_train_1'
 np.savez(outfile1,labels = label_array)
 np.savez(outfile2, features = feature_array)
 
-loadfile1 = 'labels_train_1.npz'
-loadfile2 = 'features_train_1.npz'
-data = np.load(loadfile1)
-data2 = np.load(loadfile2)
+# loadfile1 = 'labels_train_1.npz'
+# loadfile2 = 'features_train_1.npz'
+# data = np.load(loadfile1)
+# data2 = np.load(loadfile2)
