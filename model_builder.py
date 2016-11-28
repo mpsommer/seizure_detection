@@ -12,14 +12,14 @@ import sys
 # loadfile1 = 'labels_train_1.npz'
 # data = np.load(loadfile1)
  # X = numpy.ones((1, 1301))
-labels = []
-features = []
-with np.load('labels_train_1.npz') as data:
+
+with np.load('/Users/julieschnurr/IdeaProjects/seizure_prediction/labels_train_1.npz') as data:
+    print data.keys()
     labels = data['labels']
 #
 print(len(labels))
 #
-with np.load('features_train_1.npz') as data:
+with np.load('/Users/julieschnurr/IdeaProjects/seizure_prediction/features_train_1_mean.npz') as data:
     features = data['features']
 #
 print(len(features))
@@ -54,7 +54,7 @@ print("y.shape = ", y.shape)
 
 
 X_train, y_train = X[:n_samples / 2], y[:n_samples / 2]
-X_test, y_test = X[n_samples / 2 +1:], y[n_samples / 2+1:]
+X_test, y_test = X[n_samples / 2 :], y[n_samples / 2:]
 # X_train, y_train = X[:650], y[0][:650]
 # X_test, y_test = X[651:], y[651:]
 # for i in range(0, int(n_samples[1] / 2)):
@@ -91,7 +91,7 @@ print("y_test shape = ", y_test.shape)
 
 ####Version 2
 alpha = 0.1
-lasso = Lasso(alpha=alpha, max_iter=1000000000, tol=0.1)
+lasso = Lasso(alpha=alpha, max_iter=10000000, tol=0.1)
 y_pred_lasso = lasso.fit(X_train, y_train)
 # results = y_pred_lasso.predict(X_test)
 # r2_score_lasso = r2_score(y_test, results)
