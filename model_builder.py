@@ -35,11 +35,11 @@ print(len(features))
 #     temp_array.append(x)
 #     print(x)
 
-X = np.array(labels)
-y = np.array(features)
+y = np.array(labels)
+X = np.array(features)
 # y = np.asarray(y)[0,:,:]
 # X = np.asarray(X)[0,:]
-n_samples = X.shape[0]
+n_samples = y.shape[0]
 # X.reshape(-1, 1)
 print("n_samples = ", n_samples)
 print("X Shape = ", X.shape)
@@ -54,7 +54,7 @@ print("y.shape = ", y.shape)
 
 
 X_train, y_train = X[:n_samples / 2], y[:n_samples / 2]
-X_test, y_test = X[n_samples / 2:], y[n_samples / 2:]
+X_test, y_test = X[n_samples / 2 +1:], y[n_samples / 2+1:]
 # X_train, y_train = X[:650], y[0][:650]
 # X_test, y_test = X[651:], y[651:]
 # for i in range(0, int(n_samples[1] / 2)):
@@ -78,7 +78,7 @@ print("y_test shape = ", y_test.shape)
 ################################################################################|
 #####                         Pipeline for Linear Model Lasso
 ################################################################################
-# 
+#
 # clf = Lasso(alpha=0.1)
 # clf.fit(X_train, y_train)
 # Lasso(alpha=0.1, copy_X=True, fit_intercept=True, max_iter=1000,
@@ -90,28 +90,30 @@ print("y_test shape = ", y_test.shape)
 
 
 ####Version 2
-# alpha = 0.1
-# lasso = Lasso(alpha=alpha)
-# y_pred_lasso = lasso.fit(X_train, y_train)
+alpha = 0.1
+lasso = Lasso(alpha=alpha, max_iter=1000000000, tol=0.1)
+y_pred_lasso = lasso.fit(X_train, y_train)
 # results = y_pred_lasso.predict(X_test)
 # r2_score_lasso = r2_score(y_test, results)
 # print(lasso)
 # print("r^2 on test data : %f" % r2_score_lasso)
 
 ####   Version 1
-alpha = 0.1
-lasso = Lasso(alpha=alpha)
-y_pred_lasso = lasso.fit(X_train, y_train).predict(X_test)
-r2_score_lasso = r2_score(y_test, y_pred_lasso)
-print(lasso)
-print("r^2 on test data : %f" % r2_score_lasso)
+# alpha = 0.1
+# lasso = Lasso(alpha=alpha)
+# y_pred_lasso = lasso.fit(X_train, y_train).predict(X_test)
+# r2_score_lasso = r2_score(y_test, y_pred_lasso)
+# print(lasso)
+# print("r^2 on test data : %f" % r2_score_lasso)
 
 ################################################################################|
 #####                         Pipeline for Linear Model ElasticNet
 ################################################################################
-# enet = ElasticNet(alpha=alpha, l1_ratio=0.7)
+# alpha = 0.1
+# enet = ElasticNet(alpha=alpha, l1_ratio=0.7, max_iter=100000)
 #
-# y_pred_enet = enet.fit(X_train, y_train).predict(X_test)
+# y_pred_enet = enet.fit(X_train, y_train)
+# .predict(X_test)
 # r2_score_enet = r2_score(y_test, y_pred_enet)
 # # print(enet)
 # # print("r^2 on test data : %f" % r2_score_enet)
