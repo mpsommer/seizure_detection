@@ -184,39 +184,58 @@ def calculate_features(file_name):
     means = [np.mean(sub) for sub in zip(*features_by_channel)]
     variances = [np.var(sub) for sub in zip(*features_by_channel)]
     all_features = [val for sublist in features_by_channel for val in sublist]
+    means_and_vars = []
+    means_only = []
+    means_only.extend(means)
+    means_and_vars.extend(means)
     all_features.extend(means)
+    means_and_vars.extend(variances)
     all_features.extend(variances)
-    return np.asarray(all_features)
+    return np.asarray(all_features), np.asarray(means_and_vars), np.asarray(means_only)
 
 # path = '/Users/julieschnurr/Desktop/finalprog/data/train_1/'
 path = '/Users/michaelsommer/Documents/classes/ics635/finalProject/train_1/'
 num_files = len(os.listdir(path))
 label_array = []
-feature_array = []
+feature_array1 = []
+feature_array2 = []
+feature_array3 = []
+
 
 for i in range(0,len(os.listdir(path))):
-        fn = os.listdir(path)[i]
-        print("Current file = ", fn)
-        if not fn.startswith('.'):
-            print("file: " + str(i+1) + " out of: " + str(num_files))
-            fn1 = fn.split('.')[0]
-            label = fn1.split('_')[-1]
-            try:
-                all_features = calculate_features(path+fn)
-            except ValueError:
-                print("corrupted file")
-                continue
-            feature_array.append(all_features)
-            label_array.append(label)
+    fn = os.listdir(path)[i]
+    print "file: " + str(i+1) + " out of: " + str(num_files)
+    fn1 = fn.split('.')[0]
+    label = fn1.split('_')[-1]
+    label_array.append(label)
+    try:
+        all_features, means_and_vars, means_only = calculate_features(path+fn)
+    except ValueError:
+        print "corrupted file"
+        continue
+    feature_array1.append(all_features)
+    feature_array2.append(means_and_vars)
+    feature_array3.append(means_only)
 
-feature_array = np.array(feature_array)
+feature_array1 = np.array(feature_array1)
+feature_array2 = np.array(feature_array2)
 label_array = np.array(label_array)
-outfile1 = 'labels_train_1'
-outfile2 = 'features_train_1'
-np.savez(outfile1,labels = label_array)
-np.savez(outfile2, features = feature_array)
 
-# loadfile1 = 'labels_train_1.npz'
-# loadfile2 = 'features_train_1.npz'
-# data = np.load(loadfile1)
-# data2 = np.load(loadfile2)
+outfile1 = 'features_train_1_all'
+outfile3 = 'features_train_1_mean_var'
+outfile2 = 'labels_train_1'
+outfile4 = 'features_train_1_mean'
+
+np.savez(outfile1,labels = label_array)
+np.savez(outfile2, features = feature_array1)
+np.savez(outfile3, features = feature_array2)
+np.savez(outfile4, features = feature_array3)
+
+loadfile1 = 'labels_train_1.npz'
+loadfile2 = 'features_train_1_all.npz'
+loadfile3 = 'features_train_1_mean_var.npz'
+loadfile4 = 'features_train_1_mean.npz'
+data = np.load(loadfile1)
+data1 = np.load(loadfile3)
+data2 = np.load(loadfile2)
+data3 = np.load(loadfile4)
