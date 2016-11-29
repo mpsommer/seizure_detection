@@ -5,6 +5,7 @@ from sklearn import metrics
 from sklearn.linear_model import Lasso
 from sklearn.linear_model import ElasticNet
 import sys
+from sklearn.grid_search import GridSearchCV
 
 ################################################################################|
 #####                         Splitting data into test and train
@@ -81,20 +82,16 @@ X_test, y_test = X[n_samples / 2 :], y[n_samples / 2:]
 ################################################################################|
 #####                         Pipeline for Linear Model Lasso
 ################################################################################
-#
-# clf = Lasso(alpha=0.1)
-# clf.fit(X_train, y_train)
-# Lasso(alpha=0.1, copy_X=True, fit_intercept=True, max_iter=1000,
-#    normalize=False, positive=False, precompute=False, random_state=None,
-#    selection='cyclic', tol=0.0001, warm_start=False)
-# print(clf.coef_)
-# print(clf.intercept_)
 
 
 
 ####Version 2
 alpha = 0.1
-lasso = Lasso(alpha=alpha, max_iter=10000000, tol=0.01)
+# lasso = Lasso(alpha=alpha, max_iter=10000000, tol=0.01) #84.7926267281
+# lasso = Lasso(alpha=0.001, copy_X=False, fit_intercept=True, normalize=True, positive=False, selection='random',
+#               tol=0.01, warm_start=True, max_iter=10000000 ) #90.7834101382
+lasso = Lasso(alpha=0.001, copy_X=True, fit_intercept=True, normalize=True, positive=False, selection='random',
+              tol=0.01, warm_start=True, max_iter=10000000 ) #90.7834101382
 y_pred_lasso = lasso.fit(X_train, y_train)
 results = y_pred_lasso.predict(X_test)
 y_test = y_test.astype(float)
@@ -102,39 +99,23 @@ results = np.round(results)
 
 percent_correct = 100.0 * np.sum(results == y_test)/np.float(len(results))
 
-plt.subplot(2,1,1)
-plt.title('results')
-plt.hist(results)
-plt.xlim([-.25,1.25])
-plt.ylim([0,700])
-
-plt.subplot(2,1,2)
-plt.hist(y_test)
-plt.title('test')
-plt.xlim([-.25,1.25])
-plt.ylim([0,700])
-plt.show()
+# plt.subplot(2,1,1)
+# plt.title('results')
+# plt.hist(results)
+# plt.xlim([-.25,1.25])
+# plt.ylim([0,700])
+#
+# plt.subplot(2,1,2)
+# plt.hist(y_test)
+# plt.title('test')
+# plt.xlim([-.25,1.25])
+# plt.ylim([0,700])
+# plt.show()
 
 print("% correctly classified :" + str(percent_correct))
-
 r2_score_lasso = r2_score(y_test, results)
 print("r^2 on test data : %f" % r2_score_lasso)
-####   Version 1
-# alpha = 0.1
-# lasso = Lasso(alpha=alpha, max_iter=100000)
-# y_pred_lasso = lasso.fit(X_train, y_train).predict(X_test)
-#
-# # print("X_test.shape = ", X_test.shape) #shape = (650,104)
-# # print("X_test = ", X_test) #[] of floating points
-# print("y_test.type() = ", type(y_test)) #<class 'numpy.ndarray'>
-#
-# # print("y_pred_lasso.shape = ", y_pred_lasso.shape) #shape = (650,)
-# # print("y_pred_lasso = ", y_pred_lasso) #[[]] of floating points
-# print("y_pred_lasso.type() = ", type(y_pred_lasso)) #<class 'numpy.ndarray'>
 
-# r2_score_lasso = r2_score(y_test, y_pred_lasso)
-# print(lasso)
-# print("r^2 on test data : %f" % r2_score_lasso)
 
 ################################################################################|
 #####                         Pipeline for Linear Model ElasticNet
@@ -156,3 +137,18 @@ print("r^2 on test data : %f" % r2_score_lasso)
 # plt.title("Lasso R^2: %f, Elastic Net R^2: %f"
 #           % (r2_score_lasso, r2_score_enet))
 # plt.show()
+################################################################################|
+#####                         Parameter Tuning
+###############################################################################
+y_train = y_train.astype(float)
+parameters = {'alpha': (1e-2, 1e-3), 'fit_intercept': (True, False), 'normalize': (True, False), 'copy_X': (True, False), 'tol': (1e-2, 1e-3),
+              'warm_start': (True, False), 'positive': (True, False),'selection': ('cyclic', 'random'), }
+
+
+
+gs_clf = GridSearchCV(lasso, parameters, n_jobs=-1)
+gs_clf = gs_clf.fit(X_train[:600], y_train[:600])
+best_parameters, score, _ = max(gs_clf.grid_scores_, key=lambda x: x[1])
+for param_name in sorted(parameters.keys()):
+    print("%s: %r" % (param_name, best_parameters[param_name]))
+print(score)
