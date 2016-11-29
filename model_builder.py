@@ -19,7 +19,7 @@ with np.load('labels_train_1.npz') as data:
 #
 print(len(labels))
 #
-with np.load('features_train_1.npz') as data:
+with np.load('features_train_1_mean.npz') as data:
     features = data['features']
 #
 print(len(features))
@@ -55,20 +55,38 @@ print("y.shape = ", y.shape)
 
 X_train, y_train = X[:n_samples / 2], y[:n_samples / 2]
 X_test, y_test = X[n_samples / 2 +1:], y[n_samples / 2+1:]
+
+print("y_train.shape = ", y_train.shape) #shape = (650,)
+# print("y_train = ", y_train) #[] of floating points
+print("y_train.type() = ", type(y_train)) #<class 'numpy.ndarray'>
+
+print("X_train.shape = ", X_train.shape) #shape = (650, 104)
+# print("X_train = ", X_train) #[[]] of floating points
+print("X_train.type() = ", type(X_train)) #<class 'numpy.ndarray'>
+
+print("y_test.shape = ", y_test.shape) #shape = (650,)
+# print("y_test = ", y_test) #[] of floating points
+print("y_test.type() = ", type(y_test)) #<class 'numpy.ndarray'>
+
+print("X_test.shape = ", X_test.shape) #shape = (650, 104)
+# print("X_test = ", X_test) #[[]] of floating points
+print("X_test.type() = ", type(X_test)) #<class 'numpy.ndarray'>
+
 # X_train, y_train = X[:650], y[0][:650]
 # X_test, y_test = X[651:], y[651:]
 # for i in range(0, int(n_samples[1] / 2)):
 #     X_train.append(X[0][i])
 #     y_train.append(y[i])
 
-print(len(X_train))
-print("X_train shape = ", X_train.shape)
-print(len(y_train))
-print("y_train shape = ", y_train.shape)
-print(len(X_test))
-print("X_test shape = ", X_test.shape)
-print(len(y_test))
-print("y_test shape = ", y_test.shape)
+# print(len(X_train))
+# print("X_train shape = ", X_train.shape)
+# print(len(y_train))
+# print("y_train shape = ", y_train.shape)
+# print(len(X_test))
+# print("X_test shape = ", X_test.shape)
+# print(len(y_test))
+# print("y_test shape = ", y_test.shape)
+# print(type(y_test))
 #
 # print(X_train.shape)
 # print(X_train.transpose().shape)
@@ -90,18 +108,36 @@ print("y_test shape = ", y_test.shape)
 
 
 ####Version 2
-alpha = 0.1
-lasso = Lasso(alpha=alpha, max_iter=1000000000, tol=0.1)
-y_pred_lasso = lasso.fit(X_train, y_train)
+# alpha = 0.1
+# lasso = Lasso(alpha=alpha, max_iter=1000000000, tol=0.1)
+# y_pred_lasso = lasso.fit(X_train, y_train)
 # results = y_pred_lasso.predict(X_test)
+# classificationReport_predictiveAccuracy = metrics.classification_report(y_test, results)
+# print(classificationReport_predictiveAccuracy)
+
+
+# predictiveAccuracy_Lasso = np.mean(results == y_test)
+# print(predictiveAccuracy_Lasso)
+# for i in range(0, len(results)):
+#     print(type(results[i]))
+
 # r2_score_lasso = r2_score(y_test, results)
 # print(lasso)
 # print("r^2 on test data : %f" % r2_score_lasso)
 
 ####   Version 1
-# alpha = 0.1
-# lasso = Lasso(alpha=alpha)
-# y_pred_lasso = lasso.fit(X_train, y_train).predict(X_test)
+alpha = 0.1
+lasso = Lasso(alpha=alpha, max_iter=100000)
+y_pred_lasso = lasso.fit(X_train, y_train).predict(X_test)
+
+# print("X_test.shape = ", X_test.shape) #shape = (650,104)
+# print("X_test = ", X_test) #[] of floating points
+print("y_test.type() = ", type(y_test)) #<class 'numpy.ndarray'>
+
+# print("y_pred_lasso.shape = ", y_pred_lasso.shape) #shape = (650,)
+# print("y_pred_lasso = ", y_pred_lasso) #[[]] of floating points
+print("y_pred_lasso.type() = ", type(y_pred_lasso)) #<class 'numpy.ndarray'>
+
 # r2_score_lasso = r2_score(y_test, y_pred_lasso)
 # print(lasso)
 # print("r^2 on test data : %f" % r2_score_lasso)

@@ -204,38 +204,39 @@ feature_array3 = []
 
 for i in range(0,len(os.listdir(path))):
     fn = os.listdir(path)[i]
-    print "file: " + str(i+1) + " out of: " + str(num_files)
-    fn1 = fn.split('.')[0]
-    label = fn1.split('_')[-1]
-    label_array.append(label)
-    try:
-        all_features, means_and_vars, means_only = calculate_features(path+fn)
-    except ValueError:
-        print "corrupted file"
-        continue
-    feature_array1.append(all_features)
-    feature_array2.append(means_and_vars)
-    feature_array3.append(means_only)
+    print("file: " + str(i+1) + " out of: " + str(num_files))
+    if not fn.startswith('.'):
+        fn1 = fn.split('.')[0]
+        label = fn1.split('_')[-1]
+        try:
+            all_features, means_and_vars, means_only = calculate_features(path+fn)
+        except ValueError:
+            print("corrupted file")
+            continue
+        feature_array1.append(all_features)
+        feature_array2.append(means_and_vars)
+        feature_array3.append(means_only)
+        label_array.append(label)
 
 feature_array1 = np.array(feature_array1)
 feature_array2 = np.array(feature_array2)
 label_array = np.array(label_array)
 
-outfile1 = 'features_train_1_all'
-outfile3 = 'features_train_1_mean_var'
-outfile2 = 'labels_train_1'
-outfile4 = 'features_train_1_mean'
+# outfile1 = 'features_train_1_all'
+# outfile3 = 'features_train_1_mean_var'
+# outfile2 = 'labels_train_1'
+# outfile4 = 'features_train_1_mean'
 
-np.savez(outfile1,labels = label_array)
-np.savez(outfile2, features = feature_array1)
-np.savez(outfile3, features = feature_array2)
-np.savez(outfile4, features = feature_array3)
+np.savez('labels_train_1', labels = label_array)
+np.savez('features_train_1_all', features = feature_array1)
+np.savez('features_train_1_mean_var', features = feature_array2)
+np.savez('features_train_1_mean', features = feature_array3)
 
-loadfile1 = 'labels_train_1.npz'
-loadfile2 = 'features_train_1_all.npz'
-loadfile3 = 'features_train_1_mean_var.npz'
-loadfile4 = 'features_train_1_mean.npz'
-data = np.load(loadfile1)
-data1 = np.load(loadfile3)
-data2 = np.load(loadfile2)
-data3 = np.load(loadfile4)
+# loadfile1 = 'labels_train_1.npz'
+# loadfile2 = 'features_train_1_all.npz'
+# loadfile3 = 'features_train_1_mean_var.npz'
+# loadfile4 = 'features_train_1_mean.npz'
+# data = np.load(loadfile1)
+# data1 = np.load(loadfile3)
+# data2 = np.load(loadfile2)
+# data3 = np.load(loadfile4)
