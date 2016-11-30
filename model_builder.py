@@ -7,6 +7,7 @@ from sklearn.linear_model import ElasticNet
 import sys
 from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import roc_auc_score, auc, roc_curve
+from sklearn.preprocessing import label_binarize
 
 ################################################################################|
 #####                         Splitting data into test and train
@@ -18,6 +19,11 @@ with np.load('features_train_1_mean.npz') as data:
     features = data['features']
 
 y = np.array(labels)
+print(y)
+y = y.astype(int)
+# y = label_binarize(y, classes=[0, 1])
+n_classes = 100
+# print("n_classes", n_classes)
 X = np.array(features)
 
 n_samples = y.shape[0]
@@ -43,29 +49,24 @@ lasso = Lasso(alpha=0.001, copy_X=True, fit_intercept=True, normalize=True, posi
 y_pred_lasso = lasso.fit(X_train, y_train)
 results = y_pred_lasso.predict(X_test)
 y_test = y_test.astype(float)
-
 auc = roc_auc_score(y_test, results)
 print(auc)
 
 
-# n_classes = 650;
-# cv_score = y_pred_lasso.score(X_test, y_test)
+fpr, tpr, _ = roc_curve(y_test, results)
+plt.plot([0, 1], [0, 1], color='navy', lw=3, linestyle='--')
+plt.plot(fpr, tpr)
+plt.show()
+# roc_auc = auc(fpr, tpr)
 
-
-##### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   #########
-
-# Compute ROC curve and ROC area for each class
-# fpr = dict()
-# tpr = dict()
-# roc_auc = dict()
-# for i in range(0, n_classes):
-#     fpr[i], tpr[i], _ = roc_curve(y_test[:, i], y_score[:, i])
+# for i in range(651):
+#     print(i)
+#     fpr[i], tpr[i], _ = roc_curve(y_test[:, i], results[:, i])
 #     roc_auc[i] = auc(fpr[i], tpr[i])
-#
-#
-#
-#
 
+# # Compute micro-average ROC curve and ROC area
+# fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), results.ravel())
+# roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
 
 ################################################################################|
 #####                         Pipeline for LinearSVC
